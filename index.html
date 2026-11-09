@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fuitom</title>
+<meta name="description" content="Fuitom : une nouvelle grille de tuyaux chaque jour. Reliez l'arrivée d'eau à la sortie avec un seul tuyau.">
+<meta name="theme-color" content="#e4f0f3">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23304e79'/%3E%3Cpath d='M32 10c8 10 14 17 14 25a14 14 0 0 1-28 0c0-8 6-15 14-25z' fill='%2346e0a8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@600;800&display=swap">
+<style>
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+
+/* Mise en page : plaque de jeu en relief sur un mur carrelé froid. Les tuyaux sont les pièces à plat
+   de la collection Freepik (acier bleu, brides claires, rivets), posées sur des dalles. Eau cyan par-dessus. */
+:root {
+  --wall: #e4f0f3;
+  --grout: #bfd3d9;
+  --grout-faint: rgba(140, 170, 180, 0.26);
+  --plate: #fdfefe;
+  --ink: #1e3347;
+  --ink-soft: #4b6572;
+  --steel: #6288a7;
+  --steel-dark: #416e94;
+  --navy: #304e79;
+  --flange: #91b8cb;
+  --water: #46e0a8;
+  --water-deep: #137ea3;
+  --accent: #e8892f;
+  --ok: #17745f;
+  --bad: #c63f2a;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background-color: var(--wall);
+  background-image:
+    radial-gradient(120% 60% at 20% 0%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(var(--grout-faint) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grout-faint) 1px, transparent 1px);
+  background-size: auto, 72px 72px, 72px 72px;
+  color: var(--ink);
+  font: 400 16px/1.5 var(--body);
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  min-height: 100%;
+}
+.wrap { max-width: 560px; margin: 0 auto; display: grid; gap: 20px; }
+.wrap > * { min-width: 0; }
+
+.eyebrow { font: 600 13px/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--navy); margin: 0; }
+h1 { font: 800 clamp(2.7rem, 12vw, 3.9rem)/0.95 var(--display); text-transform: uppercase; letter-spacing: 0.01em; margin: 10px 0 0; text-wrap: balance; }
+.pipe-rule { position: relative; height: 18px; margin-top: 14px; background: linear-gradient(var(--steel) 0 60%, var(--steel-dark) 60%); box-shadow: 3px 6px 8px -3px rgba(15, 42, 54, 0.35); }
+.pipe-rule::before, .pipe-rule::after { content: ""; position: absolute; top: -3px; bottom: -3px; width: 9px; background: var(--flange); border-radius: 1px; }
+.pipe-rule::before { left: 0; }
+.pipe-rule::after { right: 0; }
+.lede { margin: 16px 0 0; max-width: 60ch; color: var(--ink-soft); }
+
+.levels { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: flex; align-items: baseline; gap: 8px; min-height: 44px; padding: 11px 14px;
+  font: 800 15px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink); background: var(--plate); border: 2px solid var(--ink); border-radius: 6px; cursor: pointer; }
+.chip .s { font-weight: 600; color: var(--ink-soft); }
+.chip .soon { font: 500 12px/1 var(--body); letter-spacing: 0; text-transform: none; }
+.chip[aria-current="true"] { background: var(--ink); color: #fff; }
+.chip[aria-current="true"] .s { color: #b8cdd6; }
+.chip:disabled { background: transparent; border: 2px dashed #8fa5ad; color: var(--ink-soft); cursor: not-allowed; }
+
+.card { display: grid; gap: 14px; padding: 14px 14px 18px; background: linear-gradient(180deg, #ffffff, #eff5f7); border: 1px solid var(--grout); border-radius: 16px;
+  box-shadow: 0 1px 0 #fff inset, 0 18px 36px -22px rgba(27, 51, 64, 0.55); }
+.card > * { min-width: 0; }
+.card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; }
+h2 { font: 800 1.7rem/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; margin: 0; }
+.stats { display: flex; gap: 16px; font: 600 15px/1.2 var(--body); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); }
+
+#board { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto; overflow: visible; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.cell { fill: url(#gTile); stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.5; }
+.cell.can { stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 5 4; }
+.m-pipe .cell.can, .m-pipe .cell.inpath { cursor: pointer; }
+.m-pipe .cell.can:hover { fill: url(#gTileCan); }
+.m-cap .cell:not(.inpath) { cursor: pointer; }
+.m-cap .cell:not(.inpath):hover { fill: url(#gTileCap); }
+.sep { stroke: var(--ink-soft); stroke-width: 3; opacity: 0.4; stroke-linecap: round; }
+.target { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 6 5; }
+.pl, .wl { fill: none; stroke-linejoin: round; stroke-linecap: butt; }
+.pl-sh { stroke: rgba(10, 30, 42, 0.3); }
+.wl-base { stroke: var(--water); } .wl-mid { stroke: #a6f0cf; } .wl-spec { stroke: #f3fff8; } .wl-shim { stroke: #fff; opacity: 0; }
+.head-ring { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 4 5; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .head-ring { animation: none; } }
+
+.plate-sh { fill: #b3c5cb; } .plate { fill: url(#gPlate); stroke: #c9d8db; stroke-width: 1; }
+.clue { font-family: var(--display); font-weight: 800; font-size: 24px; text-anchor: middle; dominant-baseline: central; fill: var(--ink); font-variant-numeric: tabular-nums; }
+.clue.ok { fill: var(--ok); }
+.clue.bad { fill: var(--bad); }
+
+.b-grate { stroke: #fff; stroke-width: 1.6; stroke-linecap: round; fill: none; }
+.b-slot { stroke: var(--navy); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.seg { display: inline-flex; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; }
+.seg button, .btn { min-height: 44px; padding: 0 16px; font: 800 15px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); background: var(--plate); border: 0; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.btn { border: 2px solid var(--ink); border-radius: 8px; background: transparent; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+button:focus-visible { outline: 3px solid var(--water-deep); outline-offset: 2px; }
+
+.status { min-height: 3em; margin: 0; font: 500 16px/1.45 var(--body); }
+.status.win { color: var(--ok); font-weight: 600; }
+.status.warn { color: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--ink-soft); }
+.legend li { display: flex; align-items: center; gap: 6px; }
+
+.rules h2 { font-size: 1.3rem; margin-bottom: 8px; }
+.rules ul { margin: 0; padding-left: 20px; max-width: 62ch; color: var(--ink-soft); display: grid; gap: 6px; }
+.credit { margin: 0; font-size: 13px; color: var(--ink-soft); max-width: 62ch; }
+.credit a { color: var(--navy); }
+
+/* ---- ajouts pour les pages jour / back end ---- */
+.daily { margin: 0; color: var(--ink-soft); font-weight: 500; }
+.daily::first-letter { text-transform: uppercase; }
+.daily b { color: var(--ink); }
+.daily:empty { display: none; }
+.notice { margin: 0; padding: 12px 14px; border: 1px solid var(--grout); border-left: 5px solid var(--steel); border-radius: 6px; background: #f3f8fa; color: var(--ink); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.notice.bad { border-left-color: var(--bad); background: #fdf1ee; }
+.notice[hidden], .game[hidden], [hidden] { display: none !important; }
+.notice.admin { border-left-color: var(--accent); justify-content: space-between; background: #fff7ee; }
+.admin-text { display: grid; gap: 2px; min-width: 0; flex: 1 1 240px; }
+.btn.small { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+.note-ok { margin: 0; color: var(--ok); font-weight: 600; }
+.note-ok:empty { display: none; }
+.game { display: grid; gap: 14px; }
+.wrap.wide { max-width: 760px; }
+.pick { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.stepper { display: flex; align-items: center; gap: 8px; }
+.stepper input { width: 4.6em; min-height: 44px; padding: 8px; text-align: center; font: 600 16px var(--body); color: var(--ink); background: #fff; border: 2px solid var(--ink); border-radius: 6px; }
+.numlab { font-weight: 600; color: var(--ink-soft); }
+.hint { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.idx { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 4px; }
+.idx .n { position: relative; min-height: 36px; padding: 0; font: 600 13px var(--body); color: var(--ink); background: #fff; border: 1px solid var(--grout); border-bottom-width: 4px; border-radius: 5px; cursor: pointer; }
+.idx .n.d1 { border-bottom-color: #4aa987; }
+.idx .n.d2 { border-bottom-color: #e0a33a; }
+.idx .n.d3 { border-bottom-color: #c9503a; }
+.idx .n.today { outline: 2px dashed var(--accent); outline-offset: 1px; }
+.idx .n.sel { background: var(--ink); color: #fff; }
+.idx .n.done::after { content: "✓"; position: absolute; top: 0; right: 3px; font-size: 10px; color: var(--ok); }
+.idx .n.sel.done::after { color: #9fe6c8; }
+.key { margin-top: 4px; }
+.sw { width: 18px; height: 6px; border-radius: 2px; display: inline-block; background: #ccc; }
+.sw.d1 { background: #4aa987; } .sw.d2 { background: #e0a33a; } .sw.d3 { background: #c9503a; }
+.sw.today { height: 12px; background: transparent; border: 2px dashed var(--accent); }
+.tick { color: var(--ok); font-weight: 700; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+.kv dt { color: var(--ink-soft); }
+.kv dd { margin: 0; font-weight: 500; }
+.card h3 { margin: 6px 0 0; font: 800 18px/1 var(--display); text-transform: uppercase; letter-spacing: 0.04em; }
+.result { margin: 0; min-height: 1.5em; font-weight: 500; }
+.result.ok { color: var(--ok); } .result.bad { color: var(--bad); }
+progress { width: 100%; height: 10px; accent-color: var(--steel-dark); }
+
+/* ---- accueil Fuitom ---- */
+header.home { display: grid; gap: 0; }
+header.home h1 { margin: 0; font-size: clamp(3.4rem, 17vw, 5.2rem); letter-spacing: 0.02em; }
+.banner { display: block; width: 100%; height: auto; margin-top: 10px; filter: drop-shadow(2px 5px 5px rgba(30, 51, 71, 0.22)); }
+.hook { margin: 18px 0 0; font: 500 clamp(1.15rem, 4.6vw, 1.4rem)/1.35 var(--body); max-width: 34ch; text-wrap: balance; }
+.hook b { color: var(--navy); font-weight: 700; border-bottom: 3px solid var(--water); }
+.sub { margin: 10px 0 0; color: var(--ink-soft); }
+.links { display: flex; gap: 10px; align-items: center; margin-top: 14px; font-weight: 600; }
+.links a { color: var(--navy); text-underline-offset: 4px; padding-block: 8px; }
+.links span { color: var(--ink-soft); }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* ---- sept derniers jours ---- */
+.days { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: thin; }
+.day { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 12px; font: 600 14px var(--body); color: var(--ink); background: var(--plate); border: 1px solid var(--grout); border-radius: 22px; cursor: pointer; white-space: nowrap; }
+.day[aria-current="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+.day .ck { color: var(--ok); font-weight: 800; }
+.day[aria-current="true"] .ck { color: #9fe6c8; }
+
+/* ---- fenêtre de victoire ---- */
+.btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(20, 35, 50, 0.58); animation: mfade 0.2s ease-out; }
+.modal-box { position: relative; width: min(100%, 420px); max-height: 100%; overflow-y: auto; display: grid; justify-items: center; gap: 12px; padding: 28px 20px 20px; text-align: center; background: linear-gradient(180deg, #ffffff, #eff5f7); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 0 18px 50px rgba(10, 25, 40, 0.4); animation: mpop 0.28s cubic-bezier(.2, 1.3, .4, 1); }
+.modal-box h2 { margin: 0; font: 800 clamp(2rem, 9vw, 2.6rem)/1 var(--display); text-transform: uppercase; }
+.modal-x { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; font: 400 28px/1 var(--body); color: var(--ink-soft); background: none; border: 0; border-radius: 8px; cursor: pointer; }
+.m-badge { width: 64px; height: 64px; }
+.m-sub { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.m-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin: 4px 0 0; }
+.m-stats > div { padding: 12px 8px; background: #fff; border: 1px solid var(--grout); border-radius: 10px; }
+.m-stats dt { font-size: 13px; color: var(--ink-soft); }
+.m-stats dd { margin: 4px 0 0; font: 800 clamp(1.4rem, 6vw, 1.8rem)/1.1 var(--display); letter-spacing: 0.02em; color: var(--navy); }
+.m-note { margin: 0; min-height: 1.4em; font-size: 14px; color: var(--ink-soft); }
+.m-actions { display: grid; gap: 10px; width: 100%; }
+.m-actions .btn { width: 100%; justify-content: center; }
+.m-soon { margin: 0; font-size: 14px; color: var(--ink-soft); }
+.linkbtn { background: none; border: 0; padding: 10px; font: 600 15px var(--body); color: var(--navy); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+body.modal-open { overflow: hidden; }
+@keyframes mfade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mpop { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .modal, .modal-box { animation: none; } }
+.drip { animation: drip 0.7s linear infinite; transform-box: fill-box; transform-origin: top; }
+@keyframes drip { 0% { transform: scaleY(0.55); opacity: 0.95; } 50% { transform: scaleY(1); } 100% { transform: scaleY(0.7); opacity: 0.8; } }
+@media (prefers-reduced-motion: reduce) { .drip { animation: none; } }
+
+/* la conduite fait exactement la largeur du titre */
+.titlebox { display: grid; width: fit-content; max-width: 100%; }
+.titlebox .banner { width: 0; min-width: 100%; margin-top: 6px; }
+
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="home">
+    <div class="titlebox">
+      <h1>Fuitom</h1>
+      <svg class="banner" id="banner" role="img" aria-label="Conduite d'acier, bandeau décoratif"></svg>
+    </div>
+    <p class="hook">Reliez l'arrivée d'eau à la sortie avec un seul tuyau. Les chiffres vous disent <b>combien</b> de cases sont occupées, jamais <b>lesquelles</b>.</p>
+    <p class="sub">Une nouvelle grille chaque jour, en plusieurs niveaux.</p>
+    <nav class="links" aria-label="Navigation"><a href="#jeu">Jouer</a><span aria-hidden="true">·</span><a href="#regles">Règles</a></nav>
+  </header>
+
+  <nav class="levels" id="levels" aria-label="Niveaux de difficulté"></nav>
+
+  <nav class="days" id="days" aria-label="Grilles des sept derniers jours"></nav>
+
+  <section class="card" id="jeu" aria-labelledby="levelTitle">
+    <div class="card-head">
+      <h2 id="levelTitle">Apprenti · 5×5</h2>
+      <div class="stats">
+        <span>Tuyaux <b id="placed">1</b>/<span id="total">0</span></span>
+        <span>Temps <b id="timer">0:00</b></span>
+      </div>
+    </div>
+    <p class="daily" id="dailyInfo"></p>
+
+    <div class="notice" id="notice" role="status">Chargement de la grille du jour…</div>
+
+    <div class="game" id="game" hidden>
+      <svg id="board" class="m-pipe" role="img" aria-label="Grille de tuyaux"></svg>
+
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Outil">
+          <button type="button" id="modePipe" aria-pressed="true">Tuyau</button>
+          <button type="button" id="modeCap" aria-pressed="false">Bouchon</button>
+        </div>
+        <button type="button" class="btn" id="undo" disabled>Annuler</button>
+        <button type="button" class="btn" id="reset">Recommencer</button>
+      </div>
+
+      <p class="status" id="status" aria-live="polite"></p>
+      <p class="note-ok" id="dailyNote"></p>
+      <ul class="legend" id="legend"></ul>
+    </div>
+  </section>
+
+
+  <section class="rules" id="regles">
+    <h2>Règles</h2>
+    <ul>
+      <li>Vous devez créer un tuyau unique partant de l'arrivée d'eau et relié à la sortie.</li>
+      <li>Il avance case par case, tout droit ou en coude, sans passer deux fois sur la même case.</li>
+      <li>Sur les côtés, vous verrez des chiffres indicatifs du nombre de cases occupées par un tuyau sur la ligne ou la colonne observée. Plusieurs chiffres donnent plusieurs blocs, dans l'ordre, séparés par au moins une case vide.</li>
+      <li>En mode Bouchon, marquez les cases que vous savez vides.</li>
+      <li>Chaque grille n'a qu'une seule solution.</li>
+    </ul>
+  </section>
+
+  <p class="credit">Pièces de tuyauterie : « Metal pipes collection in flat design », Designed by Freepik, via <a href="https://www.magnific.com/free-vector/metal-pipes-collection-flat-design_5461571.htm" target="_blank" rel="noopener">magnific.com</a>. Tuyaux droits allongés et coudes pivotés pour s'ajuster à la grille.</p>
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button type="button" class="modal-x" id="mClose" aria-label="Fermer">×</button>
+    <svg class="m-badge" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#fff" stroke="#304e79" stroke-width="5"/><path d="M32 14c7 9 12 15 12 22a12 12 0 0 1-24 0c0-7 5-13 12-22z" fill="#46e0a8" stroke="#137ea3" stroke-width="2.5"/></svg>
+    <h2 id="mTitle">Réseau étanche !</h2>
+    <p class="m-sub" id="mSub"></p>
+    <dl class="m-stats">
+      <div><dt>Votre temps</dt><dd id="mTime"></dd></div>
+      <div><dt>Moyenne des joueurs</dt><dd id="mAvg"></dd></div>
+    </dl>
+    <p class="m-note" id="mNote" aria-live="polite"></p>
+    <div class="m-actions">
+      <button type="button" class="btn primary" id="mNext"></button>
+      <p class="m-soon" id="mSoon" hidden>Les niveaux supérieurs arrivent bientôt.</p>
+      <button type="button" class="btn" id="mPast">Grilles précédentes</button>
+    </div>
+    <button type="button" class="linkbtn" id="mClose2">Fermer</button>
+  </div>
+</div>
+
+<script>
+(function () {
+/*LOGIC_START*/
+function runsOf(bits) {
+  const out = []; let k = 0;
+  for (let i = 0; i < bits.length; i++) {
+    if (bits[i]) { k++; } else if (k) { out.push(k); k = 0; }
+  }
+  if (k) out.push(k);
+  return out.length ? out : [0];
+}
+function sameRuns(a, b) { return a.length === b.length && a.every((v, i) => v === b[i]); }
+function occupancy(n, path) {
+  const g = [];
+  for (let r = 0; r < n; r++) g.push(new Array(n).fill(0));
+  path.forEach(p => { g[p[0]][p[1]] = 1; });
+  return g;
+}
+function evaluate(level, path) {
+  const n = level.size, g = occupancy(n, path);
+  const rowOk = [], colOk = [];
+  for (let i = 0; i < n; i++) {
+    rowOk.push(sameRuns(runsOf(g[i]), level.rows[i]));
+    const col = [];
+    for (let r = 0; r < n; r++) col.push(g[r][i]);
+    colOk.push(sameRuns(runsOf(col), level.cols[i]));
+  }
+  const head = path[path.length - 1];
+  const reached = head[0] === level.exit.r && head[1] === level.exit.c;
+  return { rowOk, colOk, reached, solved: reached && rowOk.every(Boolean) && colOk.every(Boolean) };
+}
+function applyClick(level, st, r, c, mode) {
+  const path = st.path, head = path[path.length - 1];
+  const idx = path.findIndex(p => p[0] === r && p[1] === c);
+  const k = r + "," + c;
+  if (mode === "cap") {
+    if (idx >= 0) return { state: st, msg: "Cette case porte déjà un tuyau." };
+    const caps = Object.assign({}, st.caps);
+    if (caps[k]) delete caps[k]; else caps[k] = 1;
+    return { state: { path: path, caps: caps }, changed: true };
+  }
+  if (idx >= 0) {
+    if (idx === path.length - 1) {
+      if (path.length === 1) return { state: st };
+      return { state: { path: path.slice(0, -1), caps: st.caps }, changed: true };
+    }
+    return { state: { path: path.slice(0, idx + 1), caps: st.caps }, changed: true };
+  }
+  if (st.caps[k]) return { state: st, msg: "Un bouchon bloque cette case. Retirez-le en mode Bouchon." };
+  if (head[0] === level.exit.r && head[1] === level.exit.c) return { state: st, msg: "Le tuyau est déjà branché sur la sortie." };
+  if (Math.abs(head[0] - r) + Math.abs(head[1] - c) !== 1) return { state: st, msg: "Posez le tuyau sur une case voisine de son extrémité." };
+  return { state: { path: path.concat([[r, c]]), caps: st.caps }, changed: true };
+}
+function measure(pts) {
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  return { pts: pts, cum: cum, total: cum[cum.length - 1] };
+}
+function pointAt(m, s) {
+  const t = Math.max(0, Math.min(m.total, s));
+  for (let i = 1; i < m.cum.length; i++) {
+    if (t <= m.cum[i] || i === m.cum.length - 1) {
+      const seg = m.cum[i] - m.cum[i - 1] || 1, f = (t - m.cum[i - 1]) / seg;
+      return [m.pts[i - 1][0] + (m.pts[i][0] - m.pts[i - 1][0]) * f, m.pts[i - 1][1] + (m.pts[i][1] - m.pts[i - 1][1]) * f];
+    }
+  }
+  return m.pts[0];
+}
+/* Quelle pièce poser dans la case i : tuyau droit ou coude, et sa rotation (en degrés).
+   Le coude d'origine relie le haut et la droite. Le tuyau droit d'origine est horizontal. */
+const SIDES = { L: [0, -1], R: [0, 1], T: [-1, 0], B: [1, 0] };
+const DIR_NAME = { "-1,0": "T", "0,1": "R", "1,0": "B", "0,-1": "L" };
+const ELBOW_ANGLE = { RT: 0, LT: -90, BL: -180, BR: 90 };
+function pieceKind(path, entrySide, exitSide, reached, i) {
+  const last = path.length - 1, p = path[i];
+  const a = i === 0 ? SIDES[entrySide] : [path[i - 1][0] - p[0], path[i - 1][1] - p[1]];
+  let b = null;
+  if (i < last) b = [path[i + 1][0] - p[0], path[i + 1][1] - p[1]];
+  else if (reached) b = SIDES[exitSide];
+  if (!b || (a[0] + b[0] === 0 && a[1] + b[1] === 0)) return { type: "straight", angle: a[0] === 0 ? 0 : -90 };
+  const key = [DIR_NAME[a[0] + "," + a[1]], DIR_NAME[b[0] + "," + b[1]]].sort().join("");
+  return { type: "elbow", angle: ELBOW_ANGLE[key] };
+}
+/*LOGIC_END*/
+
+/* Pièces d'origine (fichier Freepik). Le tuyau droit est coupé en son milieu et rallongé
+   pour avoir la même longueur qu'un coude, sans déformer les brides ni les rivets. */
+const STRAIGHT = `<path d="M123.894,79.815v-20.33L50.801,57.05l-9.343,23.26c19.86,0.899,39.72,0.908,59.58,0.908    C108.657,81.218,116.276,80.63,123.894,79.815z" fill="#6288A7"/><path d="M100.93,81.188c-18.891,0-37.784-0.01-56.677-0.976v17.317l78.419-4.618V79.68    C115.426,80.556,108.179,81.188,100.93,81.188z" fill="#416E94"/><polygon points="50.537,98.247 40.131,98.247 40.131,55.152 53.206,55.152   " fill="#91B8CB"/><polygon points="125.228,98.138 116.159,98.247 112.154,55.152 125.228,55.152   " fill="#91B8CB"/><path d="M65.426,73.82c0,1.26-1.022,2.281-2.281,2.281c-1.259,0-2.279-1.021-2.279-2.281    c0-1.258,1.021-2.28,2.279-2.28C64.404,71.54,65.426,72.562,65.426,73.82z" fill="#91B8CB"/><path d="M78.557,73.82c0,1.26-1.02,2.281-2.279,2.281c-1.259,0-2.281-1.021-2.281-2.281    c0-1.258,1.022-2.28,2.281-2.28C77.537,71.54,78.557,72.562,78.557,73.82z" fill="#91B8CB"/><path d="M92.082,73.82c0,1.26-1.021,2.281-2.28,2.281c-1.26,0-2.281-1.021-2.281-2.281    c0-1.258,1.02-2.28,2.281-2.28C91.061,71.54,92.082,72.562,92.082,73.82z" fill="#91B8CB"/><path d="M104.821,73.82c0,1.26-1.021,2.281-2.28,2.281c-1.259,0-2.281-1.021-2.281-2.281    c0-1.258,1.022-2.28,2.281-2.28C103.8,71.54,104.821,72.562,104.821,73.82z" fill="#91B8CB"/><rect x="50.254" y="80.15" width="65.237" height="1.334" fill="#91B8CB"/>`;
+const INLET = `<path d="M283.379,147.52h-20.33l-2.435,73.093l23.26,9.343c0.899-19.86,0.908-39.72,0.908-59.58    C284.782,162.757,284.193,155.138,283.379,147.52z" fill="#6288A7"/><path d="M284.751,170.484c0,18.891-0.01,37.784-0.976,56.677h17.317l-4.618-78.419h-13.23    C284.119,155.988,284.751,163.235,284.751,170.484z" fill="#416E94"/><polygon points="301.81,220.878 301.81,231.283 258.716,231.283 258.716,218.208   " fill="#91B8CB"/><polygon points="301.702,146.186 301.81,155.256 258.716,159.26 258.716,146.186   " fill="#91B8CB"/><path d="M277.383,205.988c1.26,0,2.281,1.022,2.281,2.281c0,1.259-1.02,2.279-2.281,2.279    c-1.258,0-2.28-1.021-2.28-2.279C275.103,207.01,276.125,205.988,277.383,205.988z" fill="#91B8CB"/><path d="M277.383,192.857c1.26,0,2.281,1.02,2.281,2.279c0,1.259-1.02,2.281-2.281,2.281    c-1.258,0-2.28-1.022-2.28-2.281C275.103,193.877,276.125,192.857,277.383,192.857z" fill="#91B8CB"/><path d="M277.383,179.332c1.26,0,2.281,1.021,2.281,2.28c0,1.261-1.02,2.281-2.281,2.281    c-1.258,0-2.28-1.02-2.28-2.281C275.103,180.353,276.125,179.332,277.383,179.332z" fill="#91B8CB"/><path d="M277.383,166.593c1.26,0,2.281,1.021,2.281,2.279c0,1.259-1.02,2.281-2.281,2.281    c-1.258,0-2.28-1.022-2.28-2.281C275.103,167.614,276.125,166.593,277.383,166.593z" fill="#91B8CB"/><rect x="283.713" y="155.923" width="1.334" height="65.237" fill="#91B8CB"/>`;
+const TAP = `<g><g><path d="M336.988,59.997l-0.662,37.498l76.304-0.56v42.712l38.858,1.242c0,0,5.045-71.912-2.286-77.346      C440.004,56.726,336.988,59.997,336.988,59.997z" fill="#6288A7"/><polygon points="455.548,133.539 455.548,144.725 409.149,144.725 409.149,130.669     " fill="#91B8CB"/><polygon points="337.635,100.596 328.638,100.596 328.638,55.047 341.207,55.047     " fill="#91B8CB"/></g><polygon points="402.929,96.921 402.929,79.467 439.266,79.467 436.766,134.736 438.088,134.796      440.65,78.144 401.605,78.144 401.605,96.921    " fill="#91B8CB"/></g><circle cx="378.413" cy="83.537" r="20.663" fill="#91B8CB"/><polygon points="386.801,97.981 370.071,97.907 361.771,83.381 370.2,68.93 386.93,69.005 395.23,83.53       " fill="#416E94"/><g><path d="M378.217,88.154L378.217,88.154c-2.407,0-4.358-1.951-4.358-4.358V24.034     c0-2.407,1.951-4.358,4.358-4.358l0,0c2.407,0,4.358,1.951,4.358,4.358v59.762C382.574,86.203,380.624,88.154,378.217,88.154z" fill="#2E4C5E"/><path d="M380.965,83.184c0,1.487-1.205,2.692-2.692,2.692c-1.487,0-2.692-1.205-2.692-2.692     s1.205-2.692,2.692-2.692C379.76,80.492,380.965,81.697,380.965,83.184z" fill="#91B8CB"/></g>`;
+const IN_CX = 280.25, IN_CY = 188.75, IN_LEN = 85.1;
+const TAP_OX = 432.3, TAP_OY = 144.8, TAP_H = 125.1, TAP_K = 0.92, TAP_WATER = 61.6, TAP_FX = 328.6, TAP_FY = 77.7, TAP_DX = 103.7, TAP_DY = 67.1, TAP_W = 126.9;
+const ELBOW = `<g><path d="M454.748,224.893c0,0-37.838,5.374-42.508,0.656c-4.669-4.717,0-42.506,0-42.506l-37.812-0.656     c0,0-7.189,70.134,2.169,78.7c12.057,11.037,78.151,2.274,78.151,2.274V224.893z" fill="#6288A7"/><path d="M372.279,245.472c0.502,7.701,1.786,13.589,4.318,15.616c12.763,10.211,78.151,2.274,78.151,2.274     v-18.125C427.039,245.585,401.483,245.518,372.279,245.472z" fill="#416E94"/><polygon points="371.467,191.953 371.467,181.732 413.711,181.732 413.711,194.575    " fill="#91B8CB"/><polygon points="445.836,224.133 455.403,224.133 455.403,266.534 443.214,266.534    " fill="#91B8CB"/><path d="M405.376,252.143c0-1.247,1.01-2.257,2.256-2.257c1.246,0,2.256,1.01,2.256,2.257     c0,1.246-1.01,2.256-2.256,2.256C406.387,254.399,405.376,253.389,405.376,252.143z" fill="#91B8CB"/><path d="M392.771,252.143c0-1.247,1.011-2.257,2.256-2.257c1.246,0,2.256,1.01,2.256,2.257     c0,1.246-1.01,2.256-2.256,2.256C393.782,254.399,392.771,253.389,392.771,252.143z" fill="#91B8CB"/><path d="M379.388,252.143c0-1.247,1.01-2.257,2.256-2.257c1.246,0,2.256,1.01,2.256,2.257     c0,1.246-1.01,2.256-2.256,2.256C380.398,254.399,379.388,253.389,379.388,252.143z" fill="#91B8CB"/><path d="M433.622,252.143c0-1.247,1.011-2.257,2.256-2.257c1.246,0,2.256,1.01,2.256,2.257     c0,1.246-1.01,2.256-2.256,2.256C434.633,254.399,433.622,253.389,433.622,252.143z" fill="#91B8CB"/><path d="M420.239,252.143c0-1.247,1.01-2.257,2.256-2.257s2.256,1.01,2.256,2.257     c0,1.246-1.01,2.256-2.256,2.256S420.239,253.389,420.239,252.143z" fill="#91B8CB"/></g><rect x="372.279" y="244.816" width="75.18" height="1.311" fill="#91B8CB"/>`;
+const CUT_X = 82.68, GAP = 39.9, STRAIGHT_CY = 76.7, ELBOW_CX = 393, ELBOW_CY = 244.7;
+
+
+const CS = 26, P = 8, UNIT = 125;
+let S = 64, G = 44, D = 34, K = S / UNIT, PW = 21.6, FL = 6.7;
+let GO = 75;
+function setScale(s) { S = s; K = s / UNIT; PW = 0.3376 * s; FL = 0.1047 * s; G = IN_LEN * K + 3; GO = TAP_W * TAP_K * K + 3; D = 0.53125 * s; }
+const SIDE = SIDES;
+const $ = id => document.getElementById(id);
+const svg = $("board");
+const reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+let level = null, lay = null;
+const hooks = { onSolved: null, onChange: null };
+let state = null, history = [], mode = "pipe";
+let startedAt = null, finalElapsed = null, timerId = null, note = "", growRaf = 0;
+let water = { running: false, done: false, raf: 0, parts: [] };
+
+/* ---------- icônes ---------- */
+function dropPath(x, y, k) {
+  return `<path fill="#fff" d="M${x} ${y - 5.5 * k}C${x + 1 * k} ${y - 2.5 * k} ${x + 4.2 * k} ${y} ${x + 4.2 * k} ${y + 2.6 * k}A${4.2 * k} ${4.2 * k} 0 0 1 ${x - 4.2 * k} ${y + 2.6 * k}C${x - 4.2 * k} ${y} ${x - 1 * k} ${y - 2.5 * k} ${x} ${y - 5.5 * k}Z"/>`;
+}
+function badgeIn(x, y) {
+  return `<circle cx="${x + 1.5}" cy="${y + 3}" r="11.5" fill="#0f2a36" opacity=".3" filter="url(#fb2)"/>` +
+    `<circle cx="${x}" cy="${y}" r="11.5" fill="#91b8cb" stroke="#304e79" stroke-width="2"/>` +
+    `<circle cx="${x}" cy="${y}" r="7.6" fill="#46e0a8"/>` + dropPath(x, y, 0.85);
+}
+function badgeOut(x, y, wet) {
+  return `<circle cx="${x + 1.5}" cy="${y + 3}" r="11.5" fill="#0f2a36" opacity=".3" filter="url(#fb2)"/>` +
+    `<circle cx="${x}" cy="${y}" r="11.5" fill="#91b8cb" stroke="#304e79" stroke-width="2"/>` +
+    `<circle cx="${x}" cy="${y}" r="7.6" fill="${wet ? "#46e0a8" : "#304e79"}"/>` +
+    `<path class="b-grate" opacity=".8" d="M${x - 4.5} ${y - 3.2}H${x + 4.5}M${x - 4.5} ${y}H${x + 4.5}M${x - 4.5} ${y + 3.2}H${x + 4.5}"/>`;
+}
+function capRich(x, y) {
+  return `<circle cx="${x + 1.2}" cy="${y + 2.2}" r="7" fill="#0f2a36" opacity=".3"/>` +
+    `<circle cx="${x}" cy="${y}" r="7" fill="#91b8cb" stroke="#304e79" stroke-width="1.5"/>` +
+    `<path class="b-slot" d="M${x - 4} ${y}H${x + 4}" transform="rotate(35 ${x} ${y})"/>`;
+}
+function legendIcon(inner) { return `<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`; }
+
+/* ---------- mise en page ---------- */
+function computeLayout(lv) {
+  const n = lv.size, st = { L: 0, R: 0, T: 0, B: 0 };
+  st[lv.entry.side] = 1; st[lv.exit.side] = 1;
+  const mg = { L: 0, R: 0, T: 0, B: 0 };
+  mg[lv.entry.side] = Math.max(mg[lv.entry.side], G); mg[lv.exit.side] = Math.max(mg[lv.exit.side], GO);
+  const rowSide = !st.L ? "L" : (!st.R ? "R" : "L");
+  const colSide = !st.T ? "T" : (!st.B ? "B" : "T");
+  const mr = Math.max.apply(null, lv.rows.map(a => a.length));
+  const mc = Math.max.apply(null, lv.cols.map(a => a.length));
+  const rowW = mr * CS + 24, colH = mc * CS + 24;
+  const gl = mg.L, gr = mg.R, gt = mg.T, gb = mg.B;
+  const lc = rowSide === "L" ? rowW : 0, rc = rowSide === "R" ? rowW : 0;
+  const tc = colSide === "T" ? colH : 0, bc = colSide === "B" ? colH : 0;
+  const ox = P + lc + gl, oy = P + tc + gt;
+  return { n, rowSide, colSide, gl, gr, gt, gb, ox, oy, W: ox + n * S + gr + rc + P, H: oy + n * S + gb + bc + P };
+}
+const X = c => lay.ox + c * S + S / 2;
+const Y = r => lay.oy + r * S + S / 2;
+const stubPt = (cell, side, dist) => [X(cell.c) + SIDE[side][1] * (S / 2 + dist), Y(cell.r) + SIDE[side][0] * (S / 2 + dist)];
+const fmtPts = pts => pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+
+function setupSvg() {
+  const W = lay.W, H = lay.H;
+  const reg = `filterUnits="userSpaceOnUse" x="-40" y="-40" width="${W + 80}" height="${H + 80}"`;
+  const stops = a => a.map(s => `<stop offset="${s[0]}" stop-color="${s[1]}"/>`).join("");
+  const sx = CUT_X, right = sx + GAP;
+  const centerX = (40.13 + 125.23 + GAP) / 2;
+  const rivets = [89.4, 102.7, 116].map(x => `<circle cx="${x}" cy="73.82" r="2.28" fill="#91B8CB"/>`).join("");
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  svg.innerHTML = `<defs>
+    <filter id="fb1" ${reg}><feGaussianBlur stdDeviation="1"/></filter>
+    <filter id="fb2" ${reg}><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="fb4" ${reg}><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="fb7" ${reg}><feGaussianBlur stdDeviation="7"/></filter>
+    <linearGradient id="gTile" x1="0" y1="0" x2="1" y2="1">${stops([[0, "#ffffff"], [1, "#dfeaed"]])}</linearGradient>
+    <linearGradient id="gTileCan" x1="0" y1="0" x2="1" y2="1">${stops([[0, "#fff8f0"], [1, "#f5dcc2"]])}</linearGradient>
+    <linearGradient id="gTileCap" x1="0" y1="0" x2="1" y2="1">${stops([[0, "#f5fbfc"], [1, "#d3e6eb"]])}</linearGradient>
+    <linearGradient id="gSlab" x1="0" y1="0" x2="1" y2="1">${stops([[0, "#e9f2f4"], [1, "#b2c6cc"]])}</linearGradient>
+    <linearGradient id="gPlate" x1="0" y1="0" x2="0" y2="1">${stops([[0, "#ffffff"], [1, "#dde8eb"]])}</linearGradient>
+    <radialGradient id="gFront" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#b4f5d6" stop-opacity=".9"/><stop offset="1" stop-color="#46e0a8" stop-opacity="0"/></radialGradient>
+    <clipPath id="cpL"><rect x="0" y="0" width="${sx}" height="200"/></clipPath>
+    <clipPath id="cpR"><rect x="${sx}" y="0" width="300" height="200"/></clipPath>
+    <g id="pStraight"><g transform="translate(${-centerX} ${-STRAIGHT_CY})">
+      <path fill="#6288A7" d="M${sx - 0.5} 58.11H${right + 0.5}V81.2H${sx - 0.5}Z"/>
+      <path fill="#416E94" d="M${sx - 0.5} 81H${right + 0.5}V96.27H${sx - 0.5}Z"/>
+      <rect x="${sx - 0.5}" y="80.15" width="${GAP + 1}" height="1.334" fill="#91B8CB"/>${rivets}
+      <g clip-path="url(#cpL)">${STRAIGHT}</g>
+      <g transform="translate(${GAP} 0)"><g clip-path="url(#cpR)">${STRAIGHT}</g></g>
+    </g></g>
+    <g id="pElbow"><g transform="translate(${-ELBOW_CX} ${-ELBOW_CY})">${ELBOW}</g></g>
+  </defs><g id="gStatic"></g><g id="gPipe" pointer-events="none"></g><g id="gWater" pointer-events="none"></g><g id="gBadge" pointer-events="none"></g><g id="gFx" pointer-events="none"></g><g id="gClues" pointer-events="none"></g>`;
+}
+
+/* ---------- chrono ---------- */
+function fmt(ms) { const t = Math.floor(ms / 1000); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); }
+function elapsedMs() { return finalElapsed !== null ? finalElapsed : (startedAt ? Date.now() - startedAt : 0); }
+function tick() { $("timer").textContent = fmt(elapsedMs()); }
+function startTimer(from) {
+  startedAt = Date.now() - (from || 0);
+  if (timerId) clearInterval(timerId);
+  timerId = setInterval(tick, 500);
+  tick();
+}
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+/* ---------- dessin : plateau et indices ---------- */
+function buildStatic(ev, inPath, can) {
+  const n = level.size, ox = lay.ox, oy = lay.oy, ex = level.exit;
+  const sz = n * S + 18;
+  let s = `<rect x="${ox - 9}" y="${oy + 3}" width="${sz}" height="${sz}" rx="16" fill="#0f2a36" opacity=".3" filter="url(#fb7)"/>` +
+    `<rect x="${ox - 9}" y="${oy - 3}" width="${sz}" height="${sz}" rx="16" fill="#9fb4ba"/>` +
+    `<rect x="${ox - 9}" y="${oy - 9}" width="${sz}" height="${sz}" rx="16" fill="url(#gSlab)" stroke="#fff" stroke-opacity=".9" stroke-width="1.5"/>`;
+  s += `<g pointer-events="none">`;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    s += `<rect x="${ox + c * S + 3}" y="${oy + r * S + 6.5}" width="${S - 6}" height="${S - 6}" rx="8" fill="#a5b9bf"/>`;
+  }
+  s += `</g><g>`;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    const k = r + "," + c;
+    s += `<rect class="cell${can.has(k) ? " can" : ""}${inPath.has(k) ? " inpath" : ""}" data-r="${r}" data-c="${c}" x="${ox + c * S + 3}" y="${oy + r * S + 3}" width="${S - 6}" height="${S - 6}" rx="8"/>`;
+  }
+  s += `</g><g pointer-events="none">`;
+  for (let k = 5; k < n; k += 5) {
+    s += `<line class="sep" x1="${ox + k * S}" y1="${oy - 4}" x2="${ox + k * S}" y2="${oy + n * S + 4}"/><line class="sep" x1="${ox - 4}" y1="${oy + k * S}" x2="${ox + n * S + 4}" y2="${oy + k * S}"/>`;
+  }
+  if (!ev.reached) s += `<rect class="target" x="${ox + ex.c * S + 9}" y="${oy + ex.r * S + 9}" width="${S - 18}" height="${S - 18}" rx="9"/>`;
+  Object.keys(state.caps).forEach(k => {
+    const rc = k.split(",");
+    s += `<g transform="translate(${X(+rc[1])} ${Y(+rc[0])}) scale(1.7)">${capRich(0, 0)}</g>`;
+  });
+  return s + `</g>`;
+}
+
+function buildClues(ev) {
+  const n = level.size, ox = lay.ox, oy = lay.oy;
+  const flag = ok => ok ? " ok" : (ev.reached && !ev.solved ? " bad" : "");
+  let plates = "", texts = "";
+  const plate = (x, y, w, h) =>
+    `<rect class="plate-sh" x="${x}" y="${y + 3}" width="${w}" height="${h}" rx="10"/><rect class="plate" x="${x}" y="${y}" width="${w}" height="${h}" rx="10"/>`;
+  level.rows.forEach((arr, i) => {
+    const len = arr.length, cyy = Y(i);
+    const edge = lay.rowSide === "L" ? ox - lay.gl - 16 : ox + n * S + lay.gr + 16;
+    const x0 = lay.rowSide === "L" ? edge - len * CS - 6 : edge - 6;
+    plates += plate(x0, cyy - 20, len * CS + 12, 40);
+    arr.forEach((v, k) => {
+      const x = lay.rowSide === "L" ? edge - (len - 1 - k) * CS - CS / 2 : edge + k * CS + CS / 2;
+      texts += `<text class="clue${flag(ev.rowOk[i])}" x="${x}" y="${cyy}">${v}</text>`;
+    });
+  });
+  level.cols.forEach((arr, j) => {
+    const len = arr.length, cxx = X(j);
+    const edge = lay.colSide === "T" ? oy - lay.gt - 16 : oy + n * S + lay.gb + 16;
+    const y0 = lay.colSide === "T" ? edge - len * CS - 6 : edge - 6;
+    plates += plate(cxx - 20, y0, 40, len * CS + 12);
+    arr.forEach((v, k) => {
+      const y = lay.colSide === "T" ? edge - (len - 1 - k) * CS - CS / 2 : edge + k * CS + CS / 2;
+      texts += `<text class="clue${flag(ev.colOk[j])}" x="${cxx}" y="${y}">${v}</text>`;
+    });
+  });
+  return plates + texts;
+}
+
+/* ---------- dessin : tuyaux ---------- */
+function computePts(ev) {
+  const pts = [stubPt(level.entry, level.entry.side, IN_LEN * K * 0.55)];
+  state.path.forEach(p => pts.push([X(p[1]), Y(p[0])]));
+  if (ev.reached) pts.push(stubPt(level.exit, level.exit.side, tapWater(level.exit.side)));
+  return pts;
+}
+
+/* Court tuyau entre la case d'entrée ou de sortie et le raccord (goutte ou grille). */
+function stubSvg(cell, side, ghost) {
+  const ex = X(cell.c) + SIDE[side][1] * S / 2, ey = Y(cell.r) + SIDE[side][0] * S / 2;
+  const tf = side === "R" ? "" : side === "L" ? "scale(-1 1)" : side === "T" ? "rotate(-90)" : "rotate(90) scale(1 -1)";
+  const h = PW / 2, split = PW * 0.6;
+  const c1 = ghost ? "#d3e1e6" : "#6288A7", c2 = ghost ? "#c3d4da" : "#416E94", c3 = ghost ? "#dce8ec" : "#91B8CB";
+  return `<g transform="translate(${ex.toFixed(1)} ${ey.toFixed(1)}) ${tf}">` +
+    `<rect x="0" y="${-h}" width="${D}" height="${split.toFixed(1)}" fill="${c1}"/>` +
+    `<rect x="0" y="${(-h + split).toFixed(1)}" width="${D}" height="${(PW - split).toFixed(1)}" fill="${c2}"/>` +
+    `<rect x="0" y="${(-h + split - 0.35).toFixed(1)}" width="${D}" height="0.7" fill="${c3}"/>` +
+    `<rect x="0" y="${-h - 0.3}" width="${FL}" height="${(PW + 0.6).toFixed(1)}" fill="${c3}"/></g>`;
+}
+
+const edgePt = (cell, side) => ({ x: X(cell.c) + SIDE[side][1] * S / 2, y: Y(cell.r) + SIDE[side][0] * S / 2, ux: SIDE[side][1], uy: SIDE[side][0] });
+function inletSvg(cell, side) {
+  const e = edgePt(cell, side), L = IN_LEN * K, ang = { R: -90, L: 90, T: 180, B: 0 }[side];
+  return `<g transform="translate(${(e.x + e.ux * L / 2).toFixed(1)} ${(e.y + e.uy * L / 2).toFixed(1)}) rotate(${ang}) scale(${K.toFixed(4)}) translate(${-IN_CX} ${-IN_CY})">${INLET}</g>`;
+}
+/* Coude à hexagone côté sortie : le bec libre pointe vers le bas quand la sortie est à gauche ou à droite
+   (raccord par la bride gauche de la pièce, miroir à gauche) ; en haut ou en bas, le bec est horizontal et l'eau retombe. */
+function tapSvg(cell, side) {
+  const e = edgePt(cell, side), ks = (TAP_K * K).toFixed(4);
+  const ex = e.x.toFixed(1), ey = e.y.toFixed(1);
+  if (side === "R") return `<g transform="translate(${ex} ${ey}) scale(${ks}) translate(${-TAP_FX} ${-TAP_FY})">${TAP}</g>`;
+  if (side === "L") return `<g transform="translate(${ex} ${ey}) scale(-${ks} ${ks}) translate(${-TAP_FX} ${-TAP_FY})">${TAP}</g>`;
+  if (side === "T") return `<g transform="translate(${ex} ${ey}) scale(${ks}) translate(${-TAP_OX} ${-TAP_OY})">${TAP}</g>`;
+  return `<g transform="translate(${ex} ${ey}) scale(${ks} -${ks}) translate(${-TAP_OX} ${-TAP_OY})">${TAP}</g>`;
+}
+function spoutPt(cell, side) {
+  const e = edgePt(cell, side), ks = TAP_K * K, dx = TAP_DX * ks, dy = TAP_DY * ks;
+  const m = { R: [dx, dy], L: [-dx, dy], T: [-dx, -dy], B: [-dx, dy] }[side];
+  return [e.x + m[0], e.y + m[1]];
+}
+const tapWater = side => (side === "L" || side === "R" ? TAP_DX * TAP_K : TAP_WATER) * K;
+function drawBadges() {
+  const ent = level.entry, ex = level.exit;
+  const sp = spoutPt(ex, ex.side);
+  $("gBadge").innerHTML = inletSvg(ent, ent.side) + tapSvg(ex, ex.side) +
+    (water.done ? `<rect class="drip" x="${(sp[0] - 2.4).toFixed(1)}" y="${sp[1].toFixed(1)}" width="4.8" height="${(20 * K / 0.512).toFixed(1)}" rx="2.4" fill="#46e0a8"/>` : "");
+}
+
+function drawPipe(g) {
+  const path = state.path, ev = evaluate(level, path), last = path.length - 1, full = g >= 1;
+  const ent = level.entry, ex = level.exit;
+  const pts = computePts(ev);
+  let s = `<polyline class="pl pl-sh" points="${fmtPts(pts)}" stroke-width="${(PW + 6).toFixed(1)}" transform="translate(4 8)" filter="url(#fb4)"/>`;
+  path.forEach((p, i) => {
+    const info = pieceKind(path, ent.side, ex.side, ev.reached, i);
+    let tx = X(p[1]), ty = Y(p[0]), op = 1;
+    if (!full && i === last && i > 0) {
+      const q = path[i - 1], k = 1 - g;
+      tx += (X(q[1]) - tx) * 0.55 * k; ty += (Y(q[0]) - ty) * 0.55 * k; op = g;
+    }
+    s += `<use href="#${info.type === "elbow" ? "pElbow" : "pStraight"}" transform="translate(${tx.toFixed(1)} ${ty.toFixed(1)}) rotate(${info.angle}) scale(${K.toFixed(4)})"${op < 1 ? ` opacity="${op.toFixed(2)}"` : ""}/>`;
+  });
+  if (!ev.reached) {
+    const h = path[last];
+    s += `<circle class="head-ring" cx="${X(h[1]).toFixed(1)}" cy="${Y(h[0]).toFixed(1)}" r="${(PW * 0.95).toFixed(1)}"/>`;
+  }
+  $("gPipe").innerHTML = s;
+  drawBadges();
+}
+
+function startGrow() {
+  cancelAnimationFrame(growRaf);
+  const t0 = performance.now(), dur = 160;
+  const loop = now => {
+    const g = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - g, 3);
+    drawPipe(g >= 1 ? 1 : e);
+    if (g < 1) growRaf = requestAnimationFrame(loop);
+  };
+  drawPipe(0);
+  growRaf = requestAnimationFrame(loop);
+}
+
+/* ---------- eau : écoulement, bulles, éclaboussure ---------- */
+function stopWater() {
+  cancelAnimationFrame(water.raf);
+  water = { running: false, done: false, raf: 0, parts: [] };
+  const a = $("gWater"), b = $("gFx");
+  if (a) a.innerHTML = "";
+  if (b) b.innerHTML = "";
+}
+
+function startWater(ev) {
+  const pts = computePts(ev), m = measure(pts), w = PW, f = v => v.toFixed(1);
+  const ps = fmtPts(pts);
+  const dasharray = "0 " + (m.total + 40);
+  const WL = (cls, sw, extra) => `<polyline class="wl ${cls}" points="${ps}" stroke-width="${sw}" stroke-dasharray="${dasharray}" ${extra || ""}/>`;
+  $("gWater").innerHTML =
+    WL("wl-base", f(w * 0.46)) +
+    WL("wl-mid", f(w * 0.24), `transform="translate(${f(-w * 0.04)} ${f(-w * 0.04)})"`) +
+    WL("wl-spec", f(w * 0.06), `transform="translate(${f(-w * 0.09)} ${f(-w * 0.09)})"`) +
+    `<polyline class="wl wl-shim" id="wShim" points="${ps}" stroke-width="${f(w * 0.06)}" stroke-dasharray="10 28" transform="translate(${f(-w * 0.08)} ${f(-w * 0.08)})"/>`;
+  let fx = `<circle id="wFront" r="${f(w * 0.4)}" fill="url(#gFront)" opacity="0"/>`;
+  const NB = 7;
+  for (let i = 0; i < NB; i++) fx += `<circle class="wb" r="2" fill="#fff" opacity="0"/>`;
+  $("gFx").innerHTML = fx;
+
+  water = { running: true, done: false, raf: 0, parts: [] };
+  if (reduceMotion) {
+    $("gWater").querySelectorAll(".wl").forEach(el => el.removeAttribute("stroke-dasharray"));
+    $("wShim").setAttribute("opacity", "0");
+    water.done = true;
+    drawBadges();
+    return;
+  }
+
+  const dur = Math.max(1400, Math.min(6000, m.total / 0.55));
+  const t0 = performance.now() + 220;
+  const ease = p => (p < 0.08 ? (p * p) / 0.16 : p - 0.04) / 0.96;
+  const layers = $("gWater").querySelectorAll(".wl:not(#wShim)");
+  const shim = $("wShim"), front = $("wFront"), bubs = $("gFx").querySelectorAll(".wb");
+  const ex = level.exit, exDir = SIDE[ex.side];
+  const b2 = spoutPt(ex, ex.side);
+  let doneAt = 0, last = performance.now();
+
+  const spawnSplash = () => {
+    const base = Math.PI / 2;
+    for (let i = 0; i < 18; i++) {
+      const a = base + (Math.random() - 0.5) * 1.9, sp = 90 + Math.random() * 170;
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      el.setAttribute("fill", i % 3 === 0 ? "#dbfbea" : "#5fdcae");
+      $("gFx").appendChild(el);
+      water.parts.push({ t: "d", el, x: b2[0], y: b2[1] + 14, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, life: 0.55 + Math.random() * 0.6, age: 0, r: 2 + Math.random() * 3 });
+    }
+    [0, 0.16].forEach(delay => {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "#46e0a8"); el.setAttribute("stroke-width", "2.5");
+      $("gFx").appendChild(el);
+      water.parts.push({ t: "r", el, x: b2[0], y: b2[1], life: 0.8, age: -delay });
+    });
+  };
+
+  const frame = now => {
+    if (!water.running) return;
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const p = Math.min(1, Math.max(0, (now - t0) / dur)), s = ease(p) * m.total;
+    layers.forEach(el => el.setAttribute("stroke-dasharray", s.toFixed(1) + " " + (m.total + 40)));
+
+    if (p > 0 && p < 1) {
+      const fp = pointAt(m, s);
+      front.setAttribute("cx", fp[0].toFixed(1)); front.setAttribute("cy", fp[1].toFixed(1)); front.setAttribute("opacity", "1");
+    } else front.setAttribute("opacity", "0");
+
+    bubs.forEach((b, i) => {
+      if (s < 60) { b.setAttribute("opacity", "0"); return; }
+      const span = Math.max(s - 20, 1), sp = ((now * (0.05 + 0.012 * i) + i * m.total * 0.137) % span) + 10;
+      const a = pointAt(m, sp), c = pointAt(m, Math.min(sp + 3, m.total));
+      let tx = c[0] - a[0], ty = c[1] - a[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+      const off = Math.sin(now * 0.004 + i * 1.7) * w * 0.13;
+      b.setAttribute("cx", (a[0] - ty * off - w * 0.04).toFixed(1));
+      b.setAttribute("cy", (a[1] + tx * off - w * 0.04).toFixed(1));
+      b.setAttribute("r", (1.1 + (i % 3) * 0.5).toFixed(1));
+      b.setAttribute("opacity", (0.6 + 0.3 * Math.sin(now * 0.006 + i)).toFixed(2));
+    });
+
+    if (p >= 1 && !water.done) { water.done = true; doneAt = now; drawBadges(); spawnSplash(); }
+    if (water.done) {
+      const k = Math.min(1, (now - doneAt) / 500);
+      shim.setAttribute("opacity", (0.4 * k).toFixed(2));
+      shim.setAttribute("stroke-dashoffset", (-((now * 0.045) % 38)).toFixed(1));
+    }
+
+    water.parts = water.parts.filter(q => {
+      q.age += dt;
+      if (q.age < 0) return true;
+      if (q.age > q.life) { q.el.remove(); return false; }
+      const k = q.age / q.life;
+      if (q.t === "d") {
+        q.vy += 420 * dt; q.x += q.vx * dt; q.y += q.vy * dt;
+        q.el.setAttribute("cx", q.x.toFixed(1)); q.el.setAttribute("cy", q.y.toFixed(1));
+        q.el.setAttribute("r", (q.r * (1 - k * 0.4)).toFixed(1)); q.el.setAttribute("opacity", (1 - k).toFixed(2));
+      } else {
+        q.el.setAttribute("cx", q.x.toFixed(1)); q.el.setAttribute("cy", q.y.toFixed(1));
+        q.el.setAttribute("r", (11 + k * 24).toFixed(1)); q.el.setAttribute("opacity", (0.8 * (1 - k)).toFixed(2));
+      }
+      return true;
+    });
+    water.raf = requestAnimationFrame(frame);
+  };
+  water.raf = requestAnimationFrame(frame);
+}
+
+/* ---------- rendu principal ---------- */
+function render() {
+  cancelAnimationFrame(growRaf);
+  const lv = level, st = state, path = st.path;
+  const ev = evaluate(lv, path);
+
+  if (ev.solved && finalElapsed === null) { finalElapsed = elapsedMs(); stopTimer(); if (hooks.onSolved) hooks.onSolved(finalElapsed); }
+  if (!ev.solved && finalElapsed !== null) { const keep = finalElapsed; finalElapsed = null; startTimer(keep); }
+  tick();
+
+  if (ev.solved) { if (!water.running) startWater(ev); }
+  else if (water.running || water.done) stopWater();
+
+  const n = lv.size, inPath = new Set(path.map(p => p[0] + "," + p[1])), head = path[path.length - 1];
+  const can = new Set();
+  if (!ev.reached) {
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(d => {
+      const r = head[0] + d[0], c = head[1] + d[1], k = r + "," + c;
+      if (r >= 0 && r < n && c >= 0 && c < n && !inPath.has(k) && !st.caps[k]) can.add(k);
+    });
+  }
+  $("gStatic").innerHTML = buildStatic(ev, inPath, can);
+  $("gClues").innerHTML = buildClues(ev);
+  drawPipe(1);
+
+  svg.setAttribute("class", mode === "cap" ? "m-cap" : "m-pipe");
+  $("placed").textContent = path.length;
+  $("undo").disabled = history.length === 0;
+  $("modePipe").setAttribute("aria-pressed", String(mode === "pipe"));
+  $("modeCap").setAttribute("aria-pressed", String(mode === "cap"));
+
+  const status = $("status");
+  let text = "", cls = "status";
+  if (ev.solved) { text = "Réseau étanche : l'eau circule jusqu'à la sortie. Résolu en " + fmt(finalElapsed) + "."; cls += " win"; }
+  else if (ev.reached) { text = "Le tuyau atteint la sortie, mais les lignes en rouge ne respectent pas leurs indices. Reprenez le tracé depuis le bon endroit."; cls += " warn"; }
+  else if (note) { text = note; }
+  else if (path.length === 1 && !Object.keys(st.caps).length) { text = "Cliquez sur une case voisine de l'arrivée d'eau pour poser le premier tuyau."; }
+  status.className = cls;
+  status.textContent = text;
+  if (hooks.onChange) hooks.onChange({ path: st.path, caps: st.caps, elapsed: elapsedMs(), solved: ev.solved });
+}
+
+function freshState() { return { path: [[level.entry.r, level.entry.c]], caps: {} }; }
+
+function validPath(lv, path) {
+  if (!Array.isArray(path) || !path.length) return false;
+  const n = lv.size, seen = new Set();
+  for (let i = 0; i < path.length; i++) {
+    const p = path[i];
+    if (!Array.isArray(p) || p.length !== 2 || !Number.isInteger(p[0]) || !Number.isInteger(p[1])) return false;
+    if (p[0] < 0 || p[1] < 0 || p[0] >= n || p[1] >= n) return false;
+    const k = p[0] + "," + p[1];
+    if (seen.has(k)) return false;
+    seen.add(k);
+    if (i === 0 && (p[0] !== lv.entry.r || p[1] !== lv.entry.c)) return false;
+    if (i > 0 && Math.abs(p[0] - path[i - 1][0]) + Math.abs(p[1] - path[i - 1][1]) !== 1) return false;
+    if (i < path.length - 1 && p[0] === lv.exit.r && p[1] === lv.exit.c) return false;
+  }
+  return true;
+}
+
+/* Charge une grille : lv = {size, entry, exit, rows, cols}. opts.state = progression à reprendre. */
+function load(lv, opts) {
+  opts = opts || {};
+  cancelAnimationFrame(growRaf);
+  level = lv; setScale(lv.size <= 5 ? 64 : 58); lay = computeLayout(level);
+  stopWater();
+  state = freshState(); history = []; note = ""; startedAt = null; finalElapsed = null; stopTimer(); mode = "pipe";
+  let carried = 0;
+  const sv = opts.state;
+  if (sv && validPath(lv, sv.path)) {
+    const caps = {};
+    if (sv.caps && typeof sv.caps === "object") Object.keys(sv.caps).forEach(k => { if (/^\d+,\d+$/.test(k)) caps[k] = 1; });
+    state = { path: sv.path.map(p => [p[0], p[1]]), caps: caps };
+    carried = Math.max(0, Math.min(86400000, Number(sv.elapsed) || 0));
+    if (sv.solved) finalElapsed = carried;
+  }
+  setupSvg();
+  svg.setAttribute("aria-label", "Grille de tuyaux " + level.size + " par " + level.size);
+  $("total").textContent = level.rows.reduce((a, r) => a + r.reduce((x, y) => x + y, 0), 0);
+  if (finalElapsed === null && (state.path.length > 1 || Object.keys(state.caps).length)) startTimer(carried);
+  render();
+}
+
+/* Pose un tracé complet (test d'une solution depuis le back end). */
+function setPath(p) {
+  history.push(state);
+  state = { path: p.map(x => [x[0], x[1]]), caps: {} };
+  note = "";
+  if (startedAt === null && finalElapsed === null) startTimer(0);
+  render();
+}
+
+svg.addEventListener("click", e => {
+  const t = e.target.closest("[data-r]");
+  if (!t) return;
+  const prevLen = state.path.length;
+  const res = applyClick(level, state, +t.dataset.r, +t.dataset.c, mode);
+  note = res.msg || "";
+  let grew = false;
+  if (res.changed) {
+    history.push(state);
+    if (history.length > 300) history.shift();
+    grew = res.state.path.length === prevLen + 1;
+    state = res.state;
+    if (startedAt === null) startTimer(0);
+  }
+  render();
+  if (grew && !reduceMotion) startGrow();
+});
+
+$("modePipe").addEventListener("click", () => { mode = "pipe"; note = ""; render(); });
+$("modeCap").addEventListener("click", () => { mode = "cap"; note = ""; render(); });
+$("undo").addEventListener("click", () => { if (history.length) { state = history.pop(); note = ""; render(); } });
+$("reset").addEventListener("click", () => {
+  if (state.path.length > 1 || Object.keys(state.caps).length) history.push(state);
+  state = freshState(); note = ""; startedAt = null; finalElapsed = null; stopTimer();
+  render();
+});
+
+$("legend").innerHTML =
+  `<li>${legendIcon(`<g transform="translate(12 12) rotate(90) scale(0.27) translate(${-IN_CX} ${-IN_CY})">${INLET}</g>`)}Arrivée d'eau</li>` +
+  `<li>${legendIcon(`<g transform="translate(12 12) scale(0.18) translate(-392.1 -82.2)">${TAP}</g>`)}Sortie d'eau</li>` +
+  `<li>${legendIcon(capRich(12, 12))}Bouchon (case vide)</li>`;
+
+
+/* Bandeau : trois pièces Freepik mises bout à bout, sans étirement : réducteur, tuyau droit, réducteur inversé. */
+function banner(el) {
+  const cy = 24, SL = 85.1, W = 2 * IN_LEN + SL;
+  const cxs = 82.68, cys = STRAIGHT_CY;
+  const rd = (x, flip) => `<g transform="translate(${x} ${cy}) scale(${flip ? -1 : 1} 1) rotate(90) translate(${-IN_CX} ${-IN_CY})">${INLET}</g>`;
+  const st = `<g transform="translate(${IN_LEN + SL / 2} ${cy}) translate(${-cxs} ${-cys})">${STRAIGHT}</g>`;
+  el.setAttribute("viewBox", "0 0 " + W.toFixed(1) + " 48");
+  el.innerHTML = rd(IN_LEN / 2, false) + st + rd(W - IN_LEN / 2, true);
+}
+window.TL = { banner: banner, load: load, setPath: setPath, hooks: hooks, evaluate: evaluate,
+  getState: function () { return state; }, getLevel: function () { return level; } };
+})();
+</script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const SIZES = [
+    { key: "s5", name: "Apprenti", size: 5 },
+    { key: "s8", name: "Compagnon", size: 8 },
+    { key: "s10", name: "Artisan", size: 10, soon: true },
+    { key: "s15", name: "Maître plombier", size: 15, soon: true },
+    { key: "s20", name: "Chef de chantier", size: 20, soon: true }
+  ];
+  let current = SIZES[0], offset = 0, token = 0, dbp = null, activeKey = null, solvedNow = false;
+  let viewInfo = null, lastElapsed = 0, popTimer = null, lastFocus = null, modalToken = 0;
+
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* stockage indisponible */ } }
+  function withTimeout(p, ms) {
+    return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej({ code: "timeout" }), ms))]);
+  }
+  function api(path, opts) {
+    return withTimeout(fetch(path, opts).then(r => r.json().then(j => ({ ok: r.ok, status: r.status, data: j }))), 10000);
+  }
+  function playerId() {
+    let id = lsGet("fuitom1:pid");
+    if (!id || !/^[A-Za-z0-9_-]{16,64}$/.test(id)) {
+      const a = new Uint8Array(16);
+      try { crypto.getRandomValues(a); } catch (e) { for (let i = 0; i < 16; i++) a[i] = Math.floor(Math.random() * 256); }
+      id = Array.from(a, x => x.toString(16).padStart(2, "0")).join("");
+      lsSet("fuitom1:pid", id);
+    }
+    return id;
+  }
+
+  function parisToday() {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  }
+  function dayOfYear(s) {
+    const p = s.split("-").map(Number);
+    return Math.round((Date.UTC(p[0], p[1] - 1, p[2]) - Date.UTC(p[0], 0, 1)) / 86400000) + 1;
+  }
+  function longDate(s) {
+    const p = s.split("-").map(Number);
+    return new Date(Date.UTC(p[0], p[1] - 1, p[2], 12)).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  }
+
+  function shiftDate(s, k) {
+    const p = s.split("-").map(Number);
+    return new Date(Date.UTC(p[0], p[1] - 1, p[2] - k)).toISOString().slice(0, 10);
+  }
+  function dayLabel(k, date) {
+    if (k === 0) return "Aujourd'hui";
+    if (k === 1) return "Hier";
+    const p = date.split("-").map(Number);
+    return new Date(Date.UTC(p[0], p[1] - 1, p[2], 12)).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+  }
+  function fmtDur(ms) {
+    const s = Math.max(0, Math.round(ms / 1000));
+    if (s < 60) return s + " s";
+    return Math.floor(s / 60) + " min " + String(s % 60).padStart(2, "0") + " s";
+  }
+  function isDone(key, date) {
+    try { const v = JSON.parse(lsGet("fuitom1:" + key + ":" + date) || "null"); return !!(v && v.solved); } catch (e) { return false; }
+  }
+
+  function clueOk(a, size) {
+    return Array.isArray(a) && a.length === size && a.every(x => Array.isArray(x) && x.length >= 1 && x.length <= size && x.every(v => Number.isInteger(v) && v >= 0 && v <= size));
+  }
+  function openOk(o, size) {
+    return o && Number.isInteger(o.r) && Number.isInteger(o.c) && o.r >= 0 && o.c >= 0 && o.r < size && o.c < size && "LRTB".indexOf(o.side) >= 0 && typeof o.side === "string" && o.side.length === 1;
+  }
+  function clean(d, size) {
+    if (!d || d.size !== size || !Number.isInteger(d.num) || !/^\d{4}-\d{2}-\d{2}$/.test(String(d.date))) return null;
+    if (!openOk(d.entry, size) || !openOk(d.exit, size) || !clueOk(d.rows, size) || !clueOk(d.cols, size)) return null;
+    return { size: size, num: d.num, date: d.date, entry: d.entry, exit: d.exit, rows: d.rows, cols: d.cols };
+  }
+
+  function setNotice(text, bad, retry) {
+    const n = $("notice");
+    n.hidden = false;
+    n.className = "notice" + (bad ? " bad" : "");
+    n.textContent = text;
+    if (retry) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn small"; b.textContent = "Réessayer";
+      b.addEventListener("click", () => select(current));
+      n.appendChild(b);
+    }
+    $("game").hidden = true;
+  }
+
+  function renderNav() {
+    const nav = $("levels");
+    nav.innerHTML = "";
+    SIZES.forEach(s => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.innerHTML = "<span>" + s.name + "</span><span class=\"s\">" + s.size + "×" + s.size + "</span>" + (s.soon ? "<span class=\"soon\">bientôt</span>" : "");
+      if (s.soon) { b.disabled = true; b.title = "Niveau en préparation"; }
+      if (s === current) b.setAttribute("aria-current", "true");
+      b.addEventListener("click", () => { if (!s.soon && s !== current) select(s); });
+      nav.appendChild(b);
+    });
+  }
+
+  function renderDays() {
+    const box = $("days"), base = parisToday();
+    box.innerHTML = "";
+    for (let k = 0; k <= 7; k++) {
+      const date = shiftDate(base, k), b = document.createElement("button");
+      b.type = "button"; b.className = "day";
+      const done = isDone(current.key, date);
+      b.innerHTML = "<span>" + dayLabel(k, date) + "</span>" + (done ? "<span class=\"ck\" aria-label=\"résolue\">✓</span>" : "");
+      if (k === offset) b.setAttribute("aria-current", "true");
+      b.addEventListener("click", () => { if (k !== offset) select(current, k); });
+      box.appendChild(b);
+    }
+  }
+
+  function updateNote(solved) {
+    solvedNow = !!solved;
+    const n = $("dailyNote");
+    n.textContent = "";
+    if (!solved) return;
+    n.appendChild(document.createTextNode(offset === 0 ? "Bravo ! Une nouvelle grille sera publiée demain. " : "Bravo ! "));
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "btn small"; b.textContent = "Voir mon résultat";
+    b.addEventListener("click", () => openModal(lastElapsed));
+    n.appendChild(b);
+  }
+
+  async function select(sz, k) {
+    const my = ++token;
+    k = k || 0;
+    closeModal(true);
+    current = sz; offset = k; lsSet("fuitom1:last", sz.key); renderNav(); renderDays();
+    $("levelTitle").textContent = sz.name + " · " + sz.size + "×" + sz.size;
+    $("dailyInfo").textContent = "";
+    activeKey = null; viewInfo = null;
+    setNotice(k ? "Chargement de la grille…" : "Chargement de la grille du jour…");
+    let d = null;
+    try {
+      const r = await api("/api/grid?size=" + sz.size + "&k=" + k);
+      if (my !== token) return;
+      d = r.ok ? clean(r.data, sz.size) : null;
+    } catch (e) { if (my === token) setNotice("La grille ne répond pas pour l'instant.", true, true); return; }
+    if (!d) { setNotice(k ? "Cette grille n'est pas disponible." : "La grille du jour n'est pas disponible pour l'instant. Réessayez dans un instant.", true, true); return; }
+
+    $("notice").hidden = true;
+    $("game").hidden = false;
+    $("dailyInfo").innerHTML = "Grille n° <b>" + d.num + "</b> · " + longDate(d.date) + (k ? " · grille précédente" : "");
+    activeKey = "fuitom1:" + sz.key + ":" + d.date;
+    viewInfo = { sz: sz, date: d.date, num: d.num };
+    let saved = null;
+    try { saved = JSON.parse(lsGet(activeKey) || "null"); } catch (e) { saved = null; }
+    updateNote(false);
+    window.TL.load(d, { state: saved });
+  }
+
+  /* ---------- fenêtre de victoire ---------- */
+  function nextLevel() {
+    const i = SIZES.indexOf(current);
+    for (let j = i + 1; j < SIZES.length; j++) if (!SIZES[j].soon) return SIZES[j];
+    return null;
+  }
+  async function loadStats(view, ms, mt, path) {
+    let out = { avg: null, n: 0, recorded: false };
+    try {
+      const r = await api("/api/score", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ size: view.sz.size, date: view.date, ms: Math.round(ms), pid: playerId(), path: path }) });
+      if (r.ok && r.data) out = { avg: r.data.avg, n: r.data.n || 0, recorded: !!r.data.recorded };
+    } catch (e) { /* moyenne indisponible */ }
+    if (mt !== modalToken) return;
+    $("mAvg").textContent = out.avg === null ? "—" : fmtDur(out.avg);
+    const parts = [];
+    if (out.avg !== null) parts.push(out.n + (out.n > 1 ? " joueurs ont terminé" : " joueur a terminé") + " cette grille.");
+    else parts.push("Vous êtes le premier à terminer cette grille.");
+    if (!out.recorded) parts.push("Votre temps n'a pas pu être ajouté à la moyenne.");
+    $("mNote").textContent = parts.join(" ");
+  }
+  function openModal(ms) {
+    if (!viewInfo) return;
+    const view = viewInfo, mt = ++modalToken;
+    $("mSub").textContent = "Grille n° " + view.num + " · " + view.sz.name + " " + view.sz.size + "×" + view.sz.size + " · " + longDate(view.date);
+    $("mTime").textContent = fmtDur(ms);
+    $("mAvg").textContent = "…";
+    $("mNote").textContent = "";
+    const nx = nextLevel();
+    $("mNext").hidden = !nx;
+    $("mNext").textContent = nx ? "Niveau supérieur · " + nx.size + "×" + nx.size : "";
+    $("mSoon").hidden = !!nx;
+    lastFocus = document.activeElement;
+    $("modal").hidden = false;
+    document.body.classList.add("modal-open");
+    ($("mNext").hidden ? $("mPast") : $("mNext")).focus();
+    loadStats(view, ms, mt, window.TL.getState().path);
+  }
+  function closeModal(silent) {
+    clearTimeout(popTimer);
+    modalToken++;
+    if ($("modal").hidden) return;
+    $("modal").hidden = true;
+    document.body.classList.remove("modal-open");
+    if (!silent && lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch (e) { /* élément disparu */ }
+  }
+  $("mClose").addEventListener("click", () => closeModal());
+  $("mClose2").addEventListener("click", () => closeModal());
+  $("modal").addEventListener("click", e => { if (e.target === $("modal")) closeModal(); });
+  $("mNext").addEventListener("click", () => { const nx = nextLevel(); if (nx) select(nx, offset); });
+  $("mPast").addEventListener("click", () => {
+    closeModal(true);
+    const days = $("days");
+    days.scrollIntoView({ behavior: "smooth", block: "center" });
+    const target = days.querySelectorAll(".day")[1];
+    if (target) target.focus({ preventScroll: true });
+  });
+  document.addEventListener("keydown", e => {
+    if ($("modal").hidden) return;
+    if (e.key === "Escape") { closeModal(); return; }
+    if (e.key !== "Tab") return;
+    const f = Array.from($("modal").querySelectorAll("button")).filter(x => !x.hidden && !x.disabled && x.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  window.TL.hooks.onChange = s => {
+    if (!activeKey) return;
+    lsSet(activeKey, JSON.stringify({ path: s.path, caps: s.caps, elapsed: s.elapsed, solved: s.solved }));
+    if (s.solved) lastElapsed = s.elapsed; else { clearTimeout(popTimer); closeModal(true); }
+    if (s.solved !== solvedNow) { updateNote(s.solved); renderDays(); }
+  };
+  window.TL.hooks.onSolved = ms => {
+    lastElapsed = ms;
+    clearTimeout(popTimer);
+    popTimer = setTimeout(() => openModal(ms), 2200);
+  };
+
+  try { window.TL.banner($("banner")); } catch (e) { $("banner").hidden = true; }
+  const last = lsGet("fuitom1:last");
+  const start = SIZES.find(s => s.key === last && !s.soon) || SIZES[0];
+  renderNav();
+  select(start);
+})();
+</script>
+</body>
+</html>

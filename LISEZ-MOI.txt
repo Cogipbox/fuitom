@@ -1,0 +1,11 @@
+FUITOM - package du site
+
+Fichiers à déposer à la racine d'un dépôt GitHub relié à Cloudflare Pages :
+  index.html   la page du jeu
+  _worker.js   grilles du jour + moyenne des joueurs
+
+Pour la moyenne des joueurs : créer un espace KV et le lier au projet sous le nom exact SCORES, puis redéployer.
+Pas de commande de build (mettre : exit 0). Dossier de sortie : racine.
+Étapes détaillées : voir TUTO.md.
+La grille change chaque jour à minuit (heure de Paris), sans tâche planifiée.
+Illustrations : Freepik (mention conservée en bas de page).
